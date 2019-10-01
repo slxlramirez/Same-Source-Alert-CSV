@@ -1,0 +1,34 @@
+| makeresults
+| eval tmp_guid="0"
+| eval join="myjoin"
+| join type=left myjoin
+[
+| inputlookup samesource_results.csv
+]
+| table max_guid sourcenumber calls spread
+| fillnull value=0 max_guid
+| map search="
+| dbxquery
+maxrows=25000
+connection="ngp_connection"
+timeout=1800 query=\"
+SELECT   a.guid,
+         to_char(to_timestamp(a.flowtime/1000) at time zone 'CST6CDT','YYYY-MM-DD hh24:mi:ss') as flowtime_ts_cst6cdt,
+         to_char(to_timestamp(a.flowtime/1000) at time zone 'GMT','YYYY-MM-DD hh24:mi:ss') as flowtime_ts_gmt,
+         sourcenumber,
+         sourceregion,
+         destinationnumber,
+         destinationregion,
+         CASE WHEN a.routername LIKE 'sip%' then 'SIP' WHEN a.routername LIKE 'enum%' then 'ENUM' ELSE 'OTHER' END as routertype,
+         a.routername,
+         a.direction,
+         b.meta::json->'callDispositions' as calltype,
+         b.duration
+FROM     master.flowstart a LEFT OUTER JOIN master.flowend b ON a.guid=b.guid
+WHERE    a.direction = 1 AND
+         a.analyticstime >= (extract (epoch from now() - INTERVAL '16 MINUTES') * 1000)::bigint AND
+         sourcenumber IN (SELECT sourcenumber FROM master.flowstart t WHERE t.guid='$max_guid$')
+\"
+"
+| table guid flowtime_ts_cst6cdt flowtime_ts_gmt sourcenumber sourceregion destinationnumber destinationregion routername routertype direction calltype duration
+| outputlookup samesource_results_cdr.csv
