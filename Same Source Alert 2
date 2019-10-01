@@ -1,0 +1,21 @@
+| inputlookup samesource_results_cdr.csv
+| rex field=calltype "\"(?<calltype>.*)\""
+| search routertype="ENUM"
+| stats count by sourcenumber destinationnumber
+| eval dnumber=destinationnumber."(enum,".count.")"
+| sort -count
+| mvcombine delim=", " dnumber 
+| nomv dnumber
+| append
+[
+| inputlookup samesource_results_cdr.csv
+| rex field=calltype "\"(?<calltype>.*)\""
+| search routertype="SIP"
+| stats count by sourcenumber destinationnumber calltype
+| eval dnumber=destinationnumber."(sip,".count." ".calltype.")"
+| sort -count
+| mvcombine delim=", " dnumber 
+| nomv dnumber
+]
+| sort -count
+| fields - destinationnumber count calltype
