@@ -11,7 +11,7 @@ savedsearch_name="Same Source Alert Destination CSV (Production)","4 - Alert 2",
 savedsearch_name="Same Source Alert CSV (Production)","3 - Alert 1",
 savedsearch_name="Same Source Report CSV (Production)","1 - Report 1",
 savedsearch_name="Same Source Report 2 CDR CSV (Production)","2 - Report 2",
-1=1,"OTHER")
+1=1,savedsearch_name)
 | timechart span=1m sum(run_time) as run_time by s_name</query>
           <earliest>-4h@m</earliest>
           <latest>now</latest>
