@@ -5,7 +5,7 @@
 [
 | inputlookup samesource_results.csv
 ]
-| table max_guid sourcenumber calls spread
+| table tmp_guid max_guid sourcenumber calls spread
 | fillnull value=0 max_guid
 | map search="
 | dbxquery
