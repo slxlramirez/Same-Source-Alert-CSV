@@ -1,0 +1,35 @@
+| dbxquery 
+maxrows=25000
+connection="ngp_connection" 
+timeout=1800 query="
+SELECT sourcenumber,
+       COUNT(a.guid) as calls,
+       COUNT(distinct destinationnumber) as spread,
+       MIN(guid) as min_guid,
+       MAX(guid) as max_guid
+FROM   master.flowstart a
+WHERE  a.routername LIKE 'enum%' AND
+       a.direction = 1 AND
+       a.analyticstime >= (extract (epoch from now() - INTERVAL '15 MINUTES') * 1000)::bigint AND
+       a.guid NOT IN 
+       (
+         SELECT guid 
+         FROM   master.policyflowdetails s
+         WHERE  s.analyticstime >= (extract (epoch from now() - INTERVAL '15 MINUTES') * 1000)::bigint AND
+                s.policydisposition = 2
+       ) AND
+       a.sourcenumber NOT IN
+       (
+         SELECT distinct a.value
+         FROM master.listing a JOIN master.listinggroup b ON a.listinggroupid=b.id
+         WHERE b.name IN ('Whitelist','Graylist')
+       ) AND
+       a.sourcenumber NOT IN ('Restricted','anonymous','Anonymous','Unavailable') AND
+       a.sourcenumber <> '' AND
+       a.sourcenumber IS NOT NULL
+GROUP BY sourcenumber
+HAVING COUNT(a.guid) > 50
+ORDER BY COUNT(a.guid) DESC
+" shortnames=t
+| table sourcenumber calls spread max_guid min_guid
+| outputlookup samesource_results.csv
