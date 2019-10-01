@@ -35,7 +35,9 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 1=1,"OTHER")
 | eval percent=ROUND(percent,1)
 | eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")",calltype="SIP","SIP(".count.")",1=1,calltype." (".count."/".percent."%)")
-| table sourcenumber resultfield
+| table sourcenumber resultfield best_guess
+| eval resultfield=CASE(best_guess="OTHER",resultfield,1=1,resultfield." | ".best_guess)
+| fields - best_guess
 | mvcombine delim=", " resultfield 
 | nomv resultfield
 | search sourcenumber="*"
