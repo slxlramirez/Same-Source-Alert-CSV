@@ -1,0 +1,71 @@
+| makeresults
+| eval calltype="ENUM" 
+| eval calls=0
+| append
+[
+| makeresults
+| eval calltype="SIP" 
+| eval calls=0
+] 
+| fields - _time
+| join type=left calltype
+[
+| inputlookup samesource_results_cdr.csv
+| stats count dc(destinationnumber) as spread by sourcenumber routertype
+| eval calltype=routertype
+| table sourcenumber calltype count spread percent
+]
+| table sourcenumber calltype count spread percent
+| fillnull value=0 count
+| append
+[
+| inputlookup samesource_results_cdr.csv
+| rex field=calltype "\"(?<calltype>.*)\""
+| search routertype="SIP"
+| top limit=1000 sourcenumber calltype
+| table sourcenumber calltype count spread percent
+]
+| eval best_guess=CASE(
+calltype="SIP" AND count=0,"NO SIP",
+calltype="ANSWERED" AND percent>50, "MOSTLY ANSWERED CALLS",
+calltype="UNANSWERED" AND percent>50, "MOSTLY UNANSWERED CALLS",
+calltype="FAILED" AND percent>50, "MOSTLY FAILED CALLS",
+calltype="BUSY" AND percent>50, "MOSTLY BUSY CALLS", 
+calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
+1=1,"OTHER")
+| eval percent=ROUND(percent,1)
+| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")",calltype="SIP","SIP(".count.")",1=1,calltype." (".count."/".percent."%),".best_guess)
+| table sourcenumber resultfield
+| mvcombine delim=", " resultfield 
+| nomv resultfield
+| search sourcenumber="*"
+| eval starttime=strftime(relative_time(now(),"-1d@d"),"%Y-%m-%d") 
+| eval endtime=strftime(relative_time(now(),"-0d@d"),"%Y-%m-%d") 
+| eval now=strftime(now(),"%Y-%m-%d %H:%M:%S") 
+| table sourcenumber resultfield now starttime endtime
+| join type=left sourcenumber
+[
+| inputlookup samesource_results_cdr.csv
+| rex field=calltype "\"(?<calltype>.*)\""
+| search routertype="ENUM"
+| stats count by sourcenumber destinationnumber
+| eval dnumber=destinationnumber."(enum,".count.")"
+| sort -count
+| mvcombine delim=", " dnumber 
+| nomv dnumber
+| append
+[
+| inputlookup samesource_results_cdr.csv
+| rex field=calltype "\"(?<calltype>.*)\""
+| search routertype="SIP"
+| stats count by sourcenumber destinationnumber calltype
+| eval dnumber=destinationnumber."(sip,".count." ".calltype.")"
+| sort -count
+| mvcombine delim=", " dnumber 
+| nomv dnumber
+]
+| sort -count
+| fields - destinationnumber count calltype
+| mvcombine delim=", " dnumber
+| nomv dnumber
+]
