@@ -10,7 +10,7 @@
 | fields - _time
 | join type=left calltype
 [
-| inputlookup samesource_results_cdr.csv
+| inputlookup samesource_results_cdr_test.csv
 | stats count dc(destinationnumber) as spread by sourcenumber routertype
 | eval calltype=routertype
 | table sourcenumber calltype count spread percent
@@ -19,7 +19,7 @@
 | fillnull value=0 count
 | append
 [
-| inputlookup samesource_results_cdr.csv
+| inputlookup samesource_results_cdr_test.csv
 | rex field=calltype "\"(?<calltype>.*)\""
 | search routertype="SIP"
 | top limit=1000 sourcenumber calltype
@@ -34,10 +34,8 @@ calltype="BUSY" AND percent>50, "MOSTLY BUSY CALLS",
 calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 1=1,"OTHER")
 | eval percent=ROUND(percent,1)
-| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")",calltype="SIP","SIP(".count.")",1=1,calltype." (".count."/".percent."%)")
-| table sourcenumber resultfield best_guess
-| eval resultfield=CASE(best_guess="OTHER",resultfield,1=1,resultfield." | ".best_guess)
-| fields - best_guess
+| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")",calltype="SIP","SIP(".count.")",1=1,calltype." (".count."/".percent."%),".best_guess)
+| table sourcenumber resultfield
 | mvcombine delim=", " resultfield 
 | nomv resultfield
 | search sourcenumber="*"
