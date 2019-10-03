@@ -71,5 +71,8 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | mvcombine delim=", " dnumber
 | nomv dnumber
 ]
+| rex field=resultfield "(?<containsbracket>.*<.*)>"
+| eval pos = if (length(containsbracket) > 0, length(containsbracket), -1)
+| eval resultfield=CASE(pos=-1,resultfield."<NO SIP>",1=1,resultfield)
 | rex field=resultfield "(?<call_ratios>.*)<(?<mssv_guess>.*)>"
-| fields - resultfield
+| fields - resultfield containsbracket pos
