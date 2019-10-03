@@ -71,3 +71,5 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | mvcombine delim=", " dnumber
 | nomv dnumber
 ]
+| rex field=resultfield "(?<call_ratios>.*)<(?<mssv_guess>.*)>"
+| fields - resultfield
