@@ -51,6 +51,7 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | stats count by sourcenumber destinationnumber
 | eval dnumber=destinationnumber."(enum,".count.")"
 | sort -count
+| head 10
 | mvcombine delim=", " dnumber 
 | nomv dnumber
 | append
@@ -61,6 +62,7 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | stats count by sourcenumber destinationnumber calltype
 | eval dnumber=destinationnumber."(sip,".count." ".calltype.")"
 | sort -count
+| head 10
 | mvcombine delim=", " dnumber 
 | nomv dnumber
 ]
