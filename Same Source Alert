@@ -34,7 +34,7 @@ calltype="BUSY" AND percent>50, "MOSTLY BUSY CALLS",
 calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 1=1,"OTHER")
 | eval percent=ROUND(percent,1)
-| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")",calltype="SIP","SIP(".count.")",1=1,calltype." (".count."/".percent."%),".best_guess)
+| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")<>",calltype="SIP","SIP(".count.")<>",1=1,calltype." (".count."/".percent."%)<".best_guess.">")
 | table sourcenumber resultfield
 | mvcombine delim=", " resultfield 
 | nomv resultfield
@@ -51,7 +51,7 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | stats count by sourcenumber destinationnumber
 | eval dnumber=destinationnumber."(enum,".count.")"
 | sort -count
-| head 10
+| head 5
 | mvcombine delim=", " dnumber 
 | nomv dnumber
 | append
@@ -62,7 +62,7 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | stats count by sourcenumber destinationnumber calltype
 | eval dnumber=destinationnumber."(sip,".count." ".calltype.")"
 | sort -count
-| head 10
+| head 5
 | mvcombine delim=", " dnumber 
 | nomv dnumber
 ]
