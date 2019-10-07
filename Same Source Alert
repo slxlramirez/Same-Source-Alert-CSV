@@ -34,13 +34,13 @@ calltype="BUSY" AND percent>50, "MOSTLY BUSY CALLS",
 calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 1=1,"OTHER")
 | eval percent=ROUND(percent,1)
-| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")<>",calltype="SIP","SIP(".count.")<>",1=1,calltype." (".count."/".percent."%)<".best_guess.">")
+| eval resultfield=CASE(calltype="ENUM","ENUM(".count."/".spread.")",calltype="SIP","SIP(".count.")",best_guess="OTHER",calltype." (".count."/".percent."%)",1=1,calltype." (".count."/".percent."%)<".best_guess.">")
 | table sourcenumber resultfield
 | mvcombine delim=", " resultfield 
 | nomv resultfield
 | search sourcenumber="*"
-| eval starttime=strftime(relative_time(now(),"-0d@d"),"%Y-%m-%d") 
-| eval endtime=strftime(relative_time(now(),"+1d@d"),"%Y-%m-%d") 
+| eval starttime=strftime(relative_time(now(),"-1d@d"),"%Y-%m-%d") 
+| eval endtime=strftime(relative_time(now(),"-0d@d"),"%Y-%m-%d") 
 | eval now=strftime(now(),"%Y-%m-%d %H:%M:%S") 
 | table sourcenumber resultfield now starttime endtime
 | join type=left sourcenumber
