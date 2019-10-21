@@ -77,6 +77,5 @@ calltype="UNKNOWN" AND percent>50, "MOSTLY UNKNOWN CALLS",
 | eval resultfield=CASE(pos=-1,resultfield."<NO SIP>",1=1,resultfield)
 | rex field=resultfield "(?<call_ratios>.*)<(?<mssv_guess>.*)>"
 | fields - resultfield containsbracket pos
-| rex field=call_ratios "\[(?<perc_spread_enum>.*)%\]"
-| rex field=call_ratios "ENUM\((?<calls_enum>(\d+))"
-| table now sourcenumber call_ratios dnumber mssv_guess calls_enum perc_spread_enum
+| rex field=call_ratios "ENUM\((?<calls_enum>(\d+))/(?<spread>(\d+))\[(?<perc_spread_enum>.*)%\]"
+| table now sourcenumber call_ratios dnumber mssv_guess calls_enum spread perc_spread_enum
